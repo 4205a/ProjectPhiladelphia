@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎙️ WalkieTalkie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0a0c08;
+      --bg2:      #111409;
+      --bg3:      #181d0f;
+      --border:   #2a3318;
+      --amber:    #d4850a;
+      --amber2:   #f0a520;
+      --amber3:   #ffc84a;
+      --green:    #4caf50;
+      --red:      #c0392b;
+      --dim:      #4a5535;
+      --text:     #c8d89a;
+      --text2:    #7a8f5a;
+      --glow:     0 0 8px rgba(212,133,10,0.6);
+      --glow2:    0 0 20px rgba(212,133,10,0.3);
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-hud:  'Orbitron', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+    }
+
+    /* ─── Header ─── */
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 20px;
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--amber);
+      background: var(--bg2);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(212,133,10,0.04), transparent);
+      pointer-events: none;
+    }
+    .logo {
+      font-family: var(--font-hud);
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--amber2);
+      letter-spacing: 3px;
+      text-shadow: var(--glow);
+    }
+    .logo span { color: var(--amber3); }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      color: var(--dim);
+      margin-left: auto;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: all 0.3s;
+    }
+    .status-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+    .status-dot.err { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ─── Layout ─── */
+    .main {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+    }
+
+    /* ─── Panel base ─── */
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 8px 14px;
+      font-family: var(--font-hud);
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      color: var(--amber);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+      text-transform: uppercase;
+    }
+    .panel-body { padding: 16px; flex: 1; }
+
+    /* ─── Register ─── */
+    #register-screen {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      min-height: 60vh;
+    }
+    .register-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--amber);
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+    .register-box::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    }
+    .register-title {
+      font-family: var(--font-hud);
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--amber2);
+      text-shadow: var(--glow);
+      letter-spacing: 4px;
+      text-align: center;
+    }
+    .register-sub {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+    }
+
+    /* ─── Inputs & Buttons ─── */
+    input[type=text], input[type=url] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type=text]:focus, input[type=url]:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 1px rgba(212,133,10,0.3);
+    }
+    input::placeholder { color: var(--dim); }
+
+    .btn {
+      background: transparent;
+      border: 1px solid var(--amber);
+      color: var(--amber2);
+      font-family: var(--font-hud);
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    .btn:hover {
+      background: rgba(212,133,10,0.12);
+      box-shadow: var(--glow);
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn.full { width: 100%; }
+    .btn.sm { padding: 6px 12px; font-size: 0.58rem; }
+    .btn.danger { border-color: var(--red); color: var(--red); }
+    .btn.danger:hover { background: rgba(192,57,43,0.12); box-shadow: 0 0 8px rgba(192,57,43,0.4); }
+    .btn.primary {
+      background: var(--amber);
+      color: #0a0c08;
+      font-weight: bold;
+    }
+    .btn.primary:hover { background: var(--amber2); box-shadow: var(--glow2); }
+
+    /* ─── Server URL row ─── */
+    .server-row {
+      display: flex;
+      gap: 8px;
+    }
+    .server-row input { flex: 1; }
+
+    /* ─── Channels list ─── */
+    .channels-list { display: flex; flex-direction: column; gap: 6px; }
+    .channel-item {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .channel-item:hover { border-color: var(--amber); background: rgba(212,133,10,0.05); }
+    .channel-item.active { border-color: var(--amber2); background: rgba(212,133,10,0.1); }
+    .channel-item.active .ch-name { color: var(--amber2); text-shadow: var(--glow); }
+    .ch-name { font-size: 0.85rem; color: var(--text); flex: 1; }
+    .ch-count {
+      font-size: 0.65rem;
+      color: var(--text2);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      font-family: var(--font-hud);
+    }
+    .no-channels { color: var(--dim); font-size: 0.75rem; padding: 12px 0; text-align: center; letter-spacing: 1px; }
+
+    .create-row { display: flex; gap: 8px; margin-top: 12px; }
+    .create-row input { flex: 1; }
+
+    /* ─── Main panel ─── */
+    .right-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ─── Users ─── */
+    .users-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.8rem;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .user-chip.me { border-color: var(--amber); }
+    .user-chip.talking {
+      border-color: var(--green);
+      background: rgba(76,175,80,0.08);
+      box-shadow: 0 0 10px rgba(76,175,80,0.25);
+      animation: talkpulse 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes talkpulse {
+      from { box-shadow: 0 0 6px rgba(76,175,80,0.2); }
+      to   { box-shadow: 0 0 16px rgba(76,175,80,0.5); }
+    }
+    .user-avatar {
+      width: 24px; height: 24px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-family: var(--font-hud);
+      font-weight: 700;
+      background: var(--bg3);
+      color: var(--amber);
+      letter-spacing: 0;
+      border: 1px solid var(--border);
+    }
+    .user-chip.talking .user-avatar {
+      background: rgba(76,175,80,0.2);
+      color: var(--green);
+      border-color: var(--green);
+    }
+    .wave-icon {
+      font-size: 0.65rem;
+      color: var(--green);
+      display: none;
+    }
+    .user-chip.talking .wave-icon { display: block; animation: blink 0.4s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.2} }
+
+    /* ─── PTT Button ─── */
+    .ptt-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 24px;
+    }
+    .ptt-ring {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ptt-btn {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #2a3010, #151a09);
+      border: 3px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--dim);
+      font-family: var(--font-hud);
+      font-size: 0.55rem;
+      letter-spacing: 2px;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.08s;
+      box-shadow:
+        0 0 0 6px var(--bg),
+        0 0 0 7px var(--border),
+        0 8px 32px rgba(0,0,0,0.6),
+        inset 0 2px 4px rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .ptt-btn::before {
+      content: '';
+      position: absolute;
+      top: 15%; left: 20%; right: 40%; height: 25%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.07), transparent);
+      border-radius: 50%;
+    }
+    .ptt-icon {
+      font-size: 2rem;
+      line-height: 1;
+      filter: grayscale(1) brightness(0.5);
+      transition: filter 0.1s;
+    }
+    .ptt-btn:hover:not(:disabled) {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+    .ptt-btn:hover:not(:disabled) .ptt-icon { filter: none; }
+    .ptt-btn.active {
+      background: radial-gradient(circle at 35% 35%, #3a5020, #1a2a0a);
+      border-color: var(--green);
+      color: var(--green);
+      box-shadow:
+        0 0 0 6px var(--bg),
+        0 0 0 7px rgba(76,175,80,0.4),
+        0 8px 32px rgba(0,0,0,0.6),
+        0 0 30px rgba(76,175,80,0.3),
+        inset 0 2px 4px rgba(255,255,255,0.04);
+      transform: scale(0.97);
+    }
+    .ptt-btn.active .ptt-icon { filter: none; font-size: 2.2rem; }
+    .ptt-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .ptt-label-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .mute-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 0.6rem;
+      font-family: var(--font-hud);
+      letter-spacing: 1px;
+      transition: all 0.15s;
+    }
+    .mute-btn:hover { color: var(--amber); }
+    .mute-btn.muted { color: var(--red); }
+    .mute-icon { font-size: 1.4rem; }
+
+    /* ─── Log ─── */
+    .log-area {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      height: 110px;
+      overflow-y: auto;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 2px;
+    }
+    .log-line {
+      font-size: 0.68rem;
+      color: var(--text2);
+      line-height: 1.4;
+    }
+    .log-line .ts { color: var(--dim); margin-right: 6px; }
+    .log-line.info .msg { color: var(--text); }
+    .log-line.success .msg { color: var(--green); }
+    .log-line.warn .msg { color: var(--amber2); }
+    .log-line.error .msg { color: var(--red); }
+
+    /* ─── VU meter ─── */
+    .vu-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 24px;
+    }
+    .vu-bar {
+      width: 5px;
+      background: var(--border);
+      transition: height 0.05s, background 0.05s;
+      border-radius: 1px 1px 0 0;
+    }
+
+    /* ─── Audio visualizer canvas ─── */
+    #vu-canvas {
+      width: 100%;
+      height: 32px;
+      display: block;
+    }
+
+    /* ─── Labels ─── */
+    .field-label {
+      font-size: 0.6rem;
+      color: var(--text2);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+      font-family: var(--font-hud);
+    }
+    .hidden { display: none !important; }
+
+    /* ─── Channel header ─── */
+    .ch-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ch-title {
+      font-family: var(--font-hud);
+      font-size: 0.75rem;
+      color: var(--amber2);
+      text-shadow: var(--glow);
+      letter-spacing: 2px;
+    }
+    .ch-actions { display: flex; gap: 6px; }
+
+    .corner-deco {
+      position: absolute;
+      width: 8px; height: 8px;
+      border-color: var(--amber);
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .corner-deco.tl { top:4px;left:4px; border-width:1px 0 0 1px; }
+    .corner-deco.tr { top:4px;right:4px; border-width:1px 1px 0 0; }
+    .corner-deco.bl { bottom:4px;left:4px; border-width:0 0 1px 1px; }
+    .corner-deco.br { bottom:4px;right:4px; border-width:0 1px 1px 0; }
+
+    @media (max-width: 640px) {
+      .main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── REGISTER SCREEN ─── -->
+<header>
+  <div class="logo"><span>📡</span> WALKIE<span>·</span>TALKIE</div>
+  <div class="status-indicator">
+    <div class="status-dot" id="conn-dot"></div>
+    <span id="conn-label">OFFLINE</span>
+  </div>
+</header>
+
+<div id="register-screen">
+  <div class="register-box" style="position:relative">
+    <div class="corner-deco tl"></div>
+    <div class="corner-deco tr"></div>
+    <div class="corner-deco bl"></div>
+    <div class="corner-deco br"></div>
+    <div class="register-title">RADIO NET</div>
+    <div class="register-sub">// IDENTIFICACIÓN DE OPERADOR //</div>
+
+    <div>
+      <div class="field-label">SERVIDOR WS</div>
+      <div class="server-row">
+        <input type="url" id="ws-url" value="ws://localhost:3000" placeholder="ws://host:puerto"/>
+      </div>
+    </div>
+
+    <div>
+      <div class="field-label">INDICATIVO DE LLAMADA</div>
+      <input type="text" id="name-input" placeholder="Tu nombre de operador" maxlength="24"/>
+    </div>
+
+    <button class="btn primary full" id="connect-btn" onclick="connect()">
+      CONECTAR Y REGISTRARSE
+    </button>
+  </div>
+</div>
+
+<!-- ─── MAIN SCREEN ─── -->
+<div class="main hidden" id="main-screen">
+
+  <!-- ─── Channels sidebar ─── -->
+  <div class="panel" style="position:relative">
+    <div class="corner-deco tl"></div>
+    <div class="corner-deco tr"></div>
+    <div class="panel-header">CANALES DE RADIO</div>
+    <div class="panel-body">
+      <div id="channels-list" class="channels-list">
+        <div class="no-channels">NO HAY CANALES</div>
+      </div>
+      <div class="create-row" style="margin-top:16px">
+        <input type="text" id="new-channel-name" placeholder="Nuevo canal..." maxlength="30"/>
+        <button class="btn sm" onclick="createChannel()">+ CREAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Right panel ─── -->
+  <div class="right-panel">
+
+    <!-- Users -->
+    <div class="panel">
+      <div class="panel-header">
+        <div id="panel-ch-name" style="display:inline">— SIN CANAL —</div>
+      </div>
+      <div class="panel-body">
+        <div class="ch-header">
+          <div id="users-label" class="field-label">OPERADORES EN LÍNEA</div>
+          <div class="ch-actions">
+            <button class="btn sm danger hidden" id="close-ch-btn" onclick="closeChannel()">CERRAR CANAL</button>
+            <button class="btn sm hidden" id="leave-btn" onclick="leaveChannel()">SALIR</button>
+          </div>
+        </div>
+        <div id="users-grid" class="users-grid" style="margin-top:10px">
+          <span style="color:var(--dim);font-size:0.75rem">Únete a un canal para ver operadores</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PTT + VU -->
+    <div class="panel">
+      <div class="panel-header">CONTROL DE TRANSMISIÓN</div>
+      <div class="panel-body">
+        <div class="ptt-section">
+          <!-- VU meter -->
+          <canvas id="vu-canvas" height="32"></canvas>
+
+          <!-- PTT -->
+          <div class="ptt-ring">
+            <button
+              class="ptt-btn"
+              id="ptt-btn"
+              disabled
+              ontouchstart="pttStart(event)"
+              ontouchend="pttStop(event)"
+              onmousedown="pttStart(event)"
+              onmouseup="pttStop(event)"
+              onmouseleave="pttStop(event)"
+              oncontextmenu="return false"
+            >
+              <div class="ptt-icon">🎙️</div>
+              <span>PULSAR Y HABLAR</span>
+            </button>
+          </div>
+
+          <div class="ptt-label-row">
+            <div class="mute-btn" id="mute-btn" onclick="toggleMute()">
+              <div class="mute-icon">🔊</div>
+              <span>AUDIO</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel">
+      <div class="panel-header">REGISTRO DE ACTIVIDAD</div>
+      <div class="panel-body" style="padding:0">
+        <div class="log-area" id="log-area"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURACIÓN DE AUDIO
+// ═══════════════════════════════════════════════════════════
+const SAMPLE_RATE    = 16000;
+const CHUNK_SAMPLES  = 320;
+const BYTES_PER_SAMPLE = 2;
+const CHUNK_BYTES    = CHUNK_SAMPLES * BYTES_PER_SAMPLE; // 640
+
+// ═══════════════════════════════════════════════════════════
+//  ESTADO
+// ═══════════════════════════════════════════════════════════
+let ws = null;
+let myName = '';
+let currentChannel = null;
+let isOwner = false;
+let muted = false;
+let talking = false;
+
+// Audio
+let audioCtx = null;
+let mediaStream = null;
+let sourceNode = null;
+let processorNode = null;
+let analyserNode = null;
+let playbackQueue = [];
+let nextPlayTime = 0;
+let inputSampleRate = 44100;
+
+// ═══════════════════════════════════════════════════════════
+//  UTILIDADES
+// ═══════════════════════════════════════════════════════════
+function ts() {
+  return new Date().toLocaleTimeString('es', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function log(msg, level = 'info') {
+  const area = document.getElementById('log-area');
+  const line = document.createElement('div');
+  line.className = `log-line ${level}`;
+  line.innerHTML = `<span class="ts">${ts()}</span><span class="msg">${msg}</span>`;
+  area.prepend(line);
+  // Trim
+  while (area.children.length > 120) area.removeChild(area.lastChild);
+}
+
+function setConnectionState(state) {
+  const dot = document.getElementById('conn-dot');
+  const lbl = document.getElementById('conn-label');
+  dot.className = 'status-dot ' + (state === 'on' ? 'on' : state === 'err' ? 'err' : '');
+  lbl.textContent = state === 'on' ? 'EN LÍNEA' : state === 'err' ? 'ERROR' : 'OFFLINE';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONEXIÓN WS
+// ═══════════════════════════════════════════════════════════
+function connect() {
+  const url  = document.getElementById('ws-url').value.trim();
+  const name = document.getElementById('name-input').value.trim();
+
+  if (!url)  { alert('Ingresa la URL del servidor'); return; }
+  if (!name) { alert('Ingresa tu nombre de operador'); return; }
+
+  myName = name;
+  log(`Conectando a ${url}…`, 'warn');
+  document.getElementById('connect-btn').disabled = true;
+
+  ws = new WebSocket(url);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    setConnectionState('on');
+    send({ type: 'register', name });
+    log(`Registrado como "${name}"`, 'success');
+    document.getElementById('register-screen').classList.add('hidden');
+    document.getElementById('main-screen').classList.remove('hidden');
+    initAudioContext();
+  };
+
+  ws.onclose = () => {
+    setConnectionState('off');
+    log('Conexión cerrada', 'error');
+    document.getElementById('connect-btn').disabled = false;
+    document.getElementById('register-screen').classList.remove('hidden');
+    document.getElementById('main-screen').classList.add('hidden');
+    stopCapture();
+  };
+
+  ws.onerror = () => {
+    setConnectionState('err');
+    log('Error de conexión al servidor', 'error');
+    document.getElementById('connect-btn').disabled = false;
+  };
+
+  ws.onmessage = (evt) => {
+    if (evt.data instanceof ArrayBuffer) {
+      if (!muted) playAudioChunk(evt.data);
+      return;
+    }
+    let msg;
+    try { msg = JSON.parse(evt.data); } catch { return; }
+    handleSignaling(msg);
+  };
+}
+
+function send(obj) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SEÑALIZACIÓN
+// ═══════════════════════════════════════════════════════════
+function handleSignaling(msg) {
+  switch (msg.type) {
+    case 'registered':
+      renderChannels(msg.channels);
+      break;
+
+    case 'channels':
+      renderChannels(msg.list);
+      break;
+
+    case 'joined':
+      currentChannel = msg.channel;
+      isOwner = msg.owner === myName;
+      log(`Entraste a [${msg.channel}]`, 'success');
+      document.getElementById('panel-ch-name').textContent = '📡 ' + msg.channel.toUpperCase();
+      document.getElementById('leave-btn').classList.remove('hidden');
+      document.getElementById('close-ch-btn').classList.toggle('hidden', !isOwner);
+      document.getElementById('ptt-btn').disabled = false;
+      // Construir users desde el joined (solo otros)
+      const userMap = {};
+      (msg.users || []).forEach(n => { userMap[n] = { talking: false }; });
+      userMap[myName] = { talking: false, me: true };
+      renderUsers(userMap);
+      break;
+
+    case 'left':
+      currentChannel = null;
+      isOwner = false;
+      log('Saliste del canal', 'warn');
+      resetChannelUI();
+      break;
+
+    case 'channel_closed':
+      log(`Canal "${msg.channel}" cerrado`, 'warn');
+      if (currentChannel === msg.channel) resetChannelUI();
+      break;
+
+    case 'channel_created':
+      log(`Nuevo canal: [${msg.channel}] por ${msg.owner}`, 'info');
+      break;
+
+    case 'channel_deleted':
+      log(`Canal eliminado: [${msg.channel}]`, 'warn');
+      break;
+
+    case 'user_joined':
+      log(`${msg.name} entró al canal`, 'success');
+      addUser(msg.name);
+      break;
+
+    case 'user_left':
+      log(`${msg.name} salió del canal`, 'warn');
+      removeUser(msg.name);
+      break;
+
+    case 'talking':
+      setUserTalking(msg.name, msg.talking);
+      break;
+
+    case 'muted':
+      // confirmación del servidor
+      break;
+
+    case 'error':
+      log(`ERROR: ${msg.message}`, 'error');
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CANALES
+// ═══════════════════════════════════════════════════════════
+let channelList = [];
+
+function renderChannels(list) {
+  channelList = list || [];
+  const container = document.getElementById('channels-list');
+  container.innerHTML = '';
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div class="no-channels">NO HAY CANALES</div>';
+    return;
+  }
+  list.forEach(ch => {
+    const item = document.createElement('div');
+    item.className = 'channel-item' + (ch.name === currentChannel ? ' active' : '');
+    item.dataset.channel = ch.name;
+    item.innerHTML = `
+      <div class="ch-name">${escHtml(ch.name)}</div>
+      <div class="ch-count">${ch.userCount}</div>
+    `;
+    item.onclick = () => joinChannel(ch.name);
+    container.appendChild(item);
+  });
+}
+
+function createChannel() {
+  const input = document.getElementById('new-channel-name');
+  const name = input.value.trim();
+  if (!name) return;
+  send({ type: 'create_channel', channel: name });
+  input.value = '';
+}
+
+function joinChannel(name) {
+  if (name === currentChannel) return;
+  send({ type: 'join', channel: name });
+}
+
+function leaveChannel() {
+  send({ type: 'leave' });
+  stopTalking();
+}
+
+function closeChannel() {
+  if (!currentChannel) return;
+  if (!confirm(`¿Cerrar el canal "${currentChannel}"?`)) return;
+  send({ type: 'close_channel', channel: currentChannel });
+}
+
+function resetChannelUI() {
+  currentChannel = null;
+  isOwner = false;
+  document.getElementById('panel-ch-name').textContent = '— SIN CANAL —';
+  document.getElementById('leave-btn').classList.add('hidden');
+  document.getElementById('close-ch-btn').classList.add('hidden');
+  document.getElementById('ptt-btn').disabled = true;
+  document.getElementById('users-grid').innerHTML = '<span style="color:var(--dim);font-size:0.75rem">Únete a un canal para ver operadores</span>';
+  stopTalking();
+  renderChannels(channelList);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  USUARIOS
+// ═══════════════════════════════════════════════════════════
+const usersState = {}; // name → {talking, me}
+
+function renderUsers(map) {
+  Object.keys(usersState).forEach(k => delete usersState[k]);
+  Object.assign(usersState, map);
+  rebuildUsersGrid();
+}
+
+function addUser(name) {
+  usersState[name] = { talking: false };
+  rebuildUsersGrid();
+}
+
+function removeUser(name) {
+  delete usersState[name];
+  rebuildUsersGrid();
+}
+
+function setUserTalking(name, val) {
+  if (usersState[name]) {
+    usersState[name].talking = val;
+    const chip = document.querySelector(`.user-chip[data-user="${CSS.escape(name)}"]`);
+    if (chip) chip.classList.toggle('talking', val);
+  }
+}
+
+function rebuildUsersGrid() {
+  const grid = document.getElementById('users-grid');
+  grid.innerHTML = '';
+  Object.entries(usersState).forEach(([name, state]) => {
+    const chip = document.createElement('div');
+    chip.className = 'user-chip' + (state.me ? ' me' : '') + (state.talking ? ' talking' : '');
+    chip.dataset.user = name;
+    const initials = name.slice(0,2).toUpperCase();
+    chip.innerHTML = `
+      <div class="user-avatar">${initials}</div>
+      <span>${escHtml(name)}${state.me ? ' (tú)' : ''}</span>
+      <span class="wave-icon">▶▶</span>
+    `;
+    grid.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PUSH TO TALK
+// ═══════════════════════════════════════════════════════════
+function pttStart(e) {
+  e.preventDefault();
+  if (!currentChannel) return;
+  if (talking) return;
+  startTalking();
+}
+
+function pttStop(e) {
+  e.preventDefault();
+  if (!talking) return;
+  stopTalking();
+}
+
+function startTalking() {
+  talking = true;
+  send({ type: 'talking', talking: true });
+  document.getElementById('ptt-btn').classList.add('active');
+  log('Transmitiendo…', 'success');
+  startCapture();
+}
+
+function stopTalking() {
+  if (!talking) return;
+  talking = false;
+  send({ type: 'talking', talking: false });
+  document.getElementById('ptt-btn').classList.remove('active');
+  stopCapture();
+}
+
+// ─── Mute ──────────────────────────────────────────────────
+function toggleMute() {
+  muted = !muted;
+  send({ type: 'mute', muted });
+  const btn = document.getElementById('mute-btn');
+  btn.classList.toggle('muted', muted);
+  btn.querySelector('.mute-icon').textContent = muted ? '🔇' : '🔊';
+  log(muted ? 'Audio silenciado' : 'Audio activado', 'warn');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AUDIO CAPTURE (PCM 16kHz)
+// ═══════════════════════════════════════════════════════════
+function initAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    inputSampleRate = audioCtx.sampleRate;
+    startVUDraw();
+  }
+}
+
+async function startCapture() {
+  if (mediaStream) return;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: SAMPLE_RATE,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 256;
+    sourceNode.connect(analyserNode);
+
+    // ScriptProcessor para capturar muestras
+    const bufferSize = 4096;
+    processorNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+
+    let resampleBuffer = [];
+    const ratio = inputSampleRate / SAMPLE_RATE;
+
+    processorNode.onaudioprocess = (e) => {
+      if (!talking) return;
+      const input = e.inputBuffer.getChannelData(0); // Float32Array
+
+      // Downsample simple (decimación lineal)
+      for (let i = 0; i < input.length; i++) {
+        if (Math.round(i * (SAMPLE_RATE / inputSampleRate)) > resampleBuffer.length - 1 ||
+            resampleBuffer.length === 0) {
+          resampleBuffer.push(input[i]);
+        }
+      }
+
+      // Enviar en chunks de CHUNK_SAMPLES
+      while (resampleBuffer.length >= CHUNK_SAMPLES) {
+        const chunk = resampleBuffer.splice(0, CHUNK_SAMPLES);
+        if (ws && ws.readyState === 1) {
+          const pcm = new Int16Array(CHUNK_SAMPLES);
+          for (let i = 0; i < CHUNK_SAMPLES; i++) {
+            pcm[i] = Math.max(-32768, Math.min(32767, Math.round(chunk[i] * 32767)));
+          }
+          ws.send(pcm.buffer);
+        }
+      }
+    };
+
+    analyserNode.connect(processorNode);
+    processorNode.connect(audioCtx.destination);
+
+  } catch(err) {
+    log(`Micrófono: ${err.message}`, 'error');
+    talking = false;
+    send({ type: 'talking', talking: false });
+    document.getElementById('ptt-btn').classList.remove('active');
+  }
+}
+
+function stopCapture() {
+  if (processorNode) { processorNode.disconnect(); processorNode = null; }
+  if (sourceNode)    { sourceNode.disconnect();    sourceNode = null; }
+  if (mediaStream)   {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AUDIO PLAYBACK (PCM 16kHz → Web Audio)
+// ═══════════════════════════════════════════════════════════
+function playAudioChunk(arrayBuffer) {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  const int16 = new Int16Array(arrayBuffer);
+  const float32 = new Float32Array(int16.length);
+  for (let i = 0; i < int16.length; i++) {
+    float32[i] = int16[i] / 32768;
+  }
+
+  // Crear AudioBuffer en el sample rate del contexto
+  const duration = float32.length / SAMPLE_RATE;
+  const audioBuffer = audioCtx.createBuffer(1, Math.ceil(duration * audioCtx.sampleRate), audioCtx.sampleRate);
+  const channel = audioBuffer.getChannelData(0);
+
+  // Resample up desde 16kHz → contexto SR
+  const upsampleRatio = audioCtx.sampleRate / SAMPLE_RATE;
+  for (let i = 0; i < channel.length; i++) {
+    const srcIdx = i / upsampleRatio;
+    const lo = Math.floor(srcIdx);
+    const hi = Math.min(lo + 1, float32.length - 1);
+    const frac = srcIdx - lo;
+    channel[i] = float32[lo] * (1 - frac) + float32[hi] * frac;
+  }
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = audioBuffer;
+  src.connect(audioCtx.destination);
+
+  const now = audioCtx.currentTime;
+  if (nextPlayTime < now) nextPlayTime = now + 0.05; // pequeño buffer de jitter
+  src.start(nextPlayTime);
+  nextPlayTime += audioBuffer.duration;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VU METER (canvas)
+// ═══════════════════════════════════════════════════════════
+const vuCanvas = document.getElementById('vu-canvas');
+const vuCtx    = vuCanvas.getContext('2d');
+const BARS     = 32;
+
+function startVUDraw() {
+  function draw() {
+    requestAnimationFrame(draw);
+
+    const W = vuCanvas.clientWidth;
+    const H = vuCanvas.clientHeight;
+    if (vuCanvas.width !== W) vuCanvas.width = W;
+    vuCanvas.height = H;
+
+    vuCtx.clearRect(0, 0, W, H);
+
+    let levels = new Uint8Array(BARS);
+    if (analyserNode && talking) {
+      const data = new Uint8Array(analyserNode.frequencyBinCount);
+      analyserNode.getByteFrequencyData(data);
+      const step = Math.floor(data.length / BARS);
+      for (let i = 0; i < BARS; i++) {
+        levels[i] = data[i * step];
+      }
+    }
+
+    const barW = W / BARS - 1;
+    for (let i = 0; i < BARS; i++) {
+      const level = levels[i] / 255;
+      const barH  = level * H;
+      const x     = i * (barW + 1);
+      const y     = H - barH;
+
+      const hue = talking ? (level > 0.7 ? 0 : 40 + level * 40) : 80;
+      vuCtx.fillStyle = talking
+        ? `hsla(${hue}, 80%, ${30 + level * 40}%, 0.9)`
+        : '#1a2010';
+      vuCtx.fillRect(x, y, barW, barH);
+    }
+  }
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Keyboard shortcut: Spacebar = PTT
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT' && !talking) {
+    e.preventDefault();
+    pttStart(e);
+  }
+});
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+    e.preventDefault();
+    pttStop(e);
+  }
+});
+
+// Enter en inputs
+document.getElementById('name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') connect();
+});
+document.getElementById('new-channel-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createChannel();
+});
+</script>
+</body>
+</html>
