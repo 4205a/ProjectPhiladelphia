@@ -293,12 +293,18 @@ function connect(){
   };
   ws.onclose=()=>{
     setConnectionState('off');
-    log('Conexión cerrada','error');
-    document.getElementById('connect-btn').disabled=false;
-    document.getElementById('register-screen').classList.remove('hidden');
-    document.getElementById('main-screen').classList.add('hidden');
-    document.getElementById('latency-badge').classList.add('hidden');
-    stopCapture(); currentChannel=null; isOwner=false; pttState='idle';
+    stopCapture(); abortPtt();
+    const wasInChannel = currentChannel;
+    currentChannel=null; isOwner=false;
+    if(myName){
+      log('⚡ Reconectando…','warn');
+      setTimeout(()=>reconnect(wasInChannel), 2000);
+    } else {
+      document.getElementById('connect-btn').disabled=false;
+      document.getElementById('register-screen').classList.remove('hidden');
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('latency-badge').classList.add('hidden');
+    }
   };
   ws.onerror=()=>{ setConnectionState('err'); log('Error de conexión','error'); document.getElementById('connect-btn').disabled=false; };
   ws.onmessage=(evt)=>{
@@ -309,6 +315,41 @@ function connect(){
   };
 }
 function send(obj){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(obj)); }
+
+function reconnect(channelToRejoin){
+  if(!myName) return;
+  const url = document.getElementById('ws-url').value.trim();
+  log(`Reconectando a ${url}…`,'warn');
+  ws = new WebSocket(url);
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = ()=>{
+    setConnectionState('on');
+    send({type:'register', name:myName});
+    log(`Reconectado como "${myName}"`,'success');
+    document.getElementById('latency-badge').classList.remove('hidden');
+    if(channelToRejoin){
+      // Re-unirse al canal automáticamente
+      setTimeout(()=>{ send({type:'join', channel:channelToRejoin}); }, 300);
+    }
+  };
+  ws.onclose=()=>{
+    setConnectionState('off');
+    stopCapture(); abortPtt();
+    const wasInChannel = currentChannel;
+    currentChannel=null; isOwner=false;
+    if(myName){
+      log('⚡ Reconectando…','warn');
+      setTimeout(()=>reconnect(wasInChannel), 2000);
+    }
+  };
+  ws.onerror=()=>{ setConnectionState('err'); };
+  ws.onmessage=(evt)=>{
+    if(evt.data instanceof ArrayBuffer){ if(!muted) playAudioChunk(evt.data); return; }
+    let msg; try{ msg=JSON.parse(evt.data); }catch{ return; }
+    if(msg.type==='pong'){ document.getElementById('latency-badge').textContent=`${Date.now()-pingTs} ms`; return; }
+    handleSignaling(msg);
+  };
+}
 
 function startLatencyPing(){
   setInterval(()=>{ if(ws&&ws.readyState===1){ pingTs=Date.now(); ws.send(JSON.stringify({type:'ping'})); } },10000);
