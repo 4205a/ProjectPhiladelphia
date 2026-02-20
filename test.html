@@ -291,59 +291,70 @@ function connect(){
     initAudio();
     startLatencyPing();
   };
-  ws.onclose=()=>{
-    setConnectionState('off');
-    stopCapture(); abortPtt();
-    const wasInChannel = currentChannel;
-    currentChannel=null; isOwner=false;
-    if(myName){
-      log('⚡ Reconectando…','warn');
-      setTimeout(()=>reconnect(wasInChannel), 2000);
-    } else {
-      document.getElementById('connect-btn').disabled=false;
-      document.getElementById('register-screen').classList.remove('hidden');
-      document.getElementById('main-screen').classList.add('hidden');
-      document.getElementById('latency-badge').classList.add('hidden');
-    }
-  };
-  ws.onerror=()=>{ setConnectionState('err'); log('Error de conexión','error'); document.getElementById('connect-btn').disabled=false; };
-  ws.onmessage=(evt)=>{
-    if(evt.data instanceof ArrayBuffer){ if(!muted) playAudioChunk(evt.data); return; }
-    let msg; try{ msg=JSON.parse(evt.data); }catch{ return; }
-    if(msg.type==='pong'){ document.getElementById('latency-badge').textContent=`${Date.now()-pingTs} ms`; return; }
-    handleSignaling(msg);
-  };
+  attachWsHandlers(ws);
 }
 function send(obj){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(obj)); }
 
 function reconnect(channelToRejoin){
   if(!myName) return;
   const url = document.getElementById('ws-url').value.trim();
-  log(`Reconectando a ${url}…`,'warn');
-  ws = new WebSocket(url);
-  ws.binaryType = 'arraybuffer';
-  ws.onopen = ()=>{
+  log('Reconectando…','warn');
+  setConnectionState('off');
+
+  let socket;
+  try { socket = new WebSocket(url); }
+  catch(e) {
+    // Si falla instantáneamente (ej: sin red), reintentar
+    reconnect(channelToRejoin);
+    return;
+  }
+
+  socket.binaryType = 'arraybuffer';
+
+  socket.onopen = ()=>{
+    ws = socket;
     setConnectionState('on');
-    send({type:'register', name:myName});
+    ws.send(JSON.stringify({type:'register', name:myName}));
     log(`Reconectado como "${myName}"`,'success');
     document.getElementById('latency-badge').classList.remove('hidden');
-    if(channelToRejoin){
-      // Re-unirse al canal automáticamente
-      setTimeout(()=>{ send({type:'join', channel:channelToRejoin}); }, 300);
-    }
+    attachWsHandlers(ws);
+    // Reintento de join con retry infinito
+    if(channelToRejoin) retryJoin(channelToRejoin);
   };
-  ws.onclose=()=>{
+
+  socket.onerror = ()=>{};
+
+  socket.onclose = ()=>{
+    // Falló antes de abrir — reintentar inmediatamente
+    reconnect(channelToRejoin);
+  };
+}
+
+function retryJoin(channel){
+  if(!channel || !ws || ws.readyState !== 1) {
+    // Todavía no está listo, reintentar en 100ms
+    setTimeout(()=>retryJoin(channel), 100);
+    return;
+  }
+  // Verificar si ya estamos en el canal (puede que handleSignaling ya lo procesó)
+  if(currentChannel === channel) return;
+  ws.send(JSON.stringify({type:'join', channel}));
+  // Si en 500ms no estamos en el canal, reintentar
+  setTimeout(()=>{
+    if(currentChannel !== channel) retryJoin(channel);
+  }, 500);
+}
+
+function attachWsHandlers(socket){
+  socket.onclose = ()=>{
     setConnectionState('off');
     stopCapture(); abortPtt();
     const wasInChannel = currentChannel;
-    currentChannel=null; isOwner=false;
-    if(myName){
-      log('⚡ Reconectando…','warn');
-      setTimeout(()=>reconnect(wasInChannel), 2000);
-    }
+    currentChannel = null; isOwner = false;
+    if(myName) reconnect(wasInChannel);
   };
-  ws.onerror=()=>{ setConnectionState('err'); };
-  ws.onmessage=(evt)=>{
+  socket.onerror = ()=>{ setConnectionState('err'); };
+  socket.onmessage = (evt)=>{
     if(evt.data instanceof ArrayBuffer){ if(!muted) playAudioChunk(evt.data); return; }
     let msg; try{ msg=JSON.parse(evt.data); }catch{ return; }
     if(msg.type==='pong'){ document.getElementById('latency-badge').textContent=`${Date.now()-pingTs} ms`; return; }
