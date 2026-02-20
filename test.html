@@ -529,6 +529,8 @@
 </div>
 
 <script>
+const VER = 3;
+
 // ════════════════════════════════════════════════════════════
 //  CONSTANTES DE AUDIO
 // ════════════════════════════════════════════════════════════
@@ -608,6 +610,7 @@ function connect() {
   ws.onopen = () => {
     setConnectionState('on');
     send({ type: 'register', name });
+    log(`Philadelphia v${VER}`, 'success');
     log(`Registrado como "${name}"`, 'success');
     document.getElementById('register-screen').classList.add('hidden');
     document.getElementById('main-screen').classList.remove('hidden');
@@ -850,7 +853,7 @@ function stopTalking() {
   talking = false;
   send({ type: 'talking', talking: false });
   document.getElementById('ptt-btn').classList.remove('active');
-  stopCapture();
+  setTimeout(stopCapture, 250);
 }
 function toggleMute() {
   muted = !muted;
@@ -1014,7 +1017,7 @@ function playAudioChunk(arrayBuffer) {
 
   const now = audioCtx.currentTime;
   // Si nextPlayTime está en el pasado, saltar hacia adelante con jitter buffer
-  if (nextPlayTime < now + 0.005) {
+  if (nextPlayTime < now + 0.005 || nextPlayTime > now + 0.3) {
     nextPlayTime = now + JITTER_BUFFER_SEC;
     log('⚡ Buffer reset', 'warn');
   }
