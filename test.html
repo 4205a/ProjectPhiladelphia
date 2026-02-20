@@ -539,7 +539,7 @@ const CHUNK_BYTES      = CHUNK_SAMPLES * BYTES_PER_SAMPLE; // 640
 
 // Jitter buffer del cliente: segundos de audio pre-cargados antes de reproducir
 // Más alto = menos cortes, más latencia
-const JITTER_BUFFER_SEC = 0.15; // 150ms
+const JITTER_BUFFER_SEC = 0.06; // 150ms
 
 // ════════════════════════════════════════════════════════════
 //  ESTADO
@@ -665,7 +665,7 @@ function startLatencyPing() {
       pingTs = Date.now();
       ws.send(JSON.stringify({ type: 'ping' }));
     }
-  }, 3000);
+  }, 10000);
 }
 
 // ════════════════════════════════════════════════════════════
